@@ -2,7 +2,7 @@ name: Fetch Jira Data
 
 on:
   schedule:
-    - cron: '*/30 * * * *'   # Every 30 minutes
+    - cron: '15 * * * *'     # Every hour at :15 (reliable on GitHub free tier)
   workflow_dispatch:          # Allow manual trigger
 
 permissions:
@@ -14,6 +14,8 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Setup Python
         uses: actions/setup-python@v5
@@ -32,10 +34,20 @@ jobs:
         run: python fetch_jira.py
 
       - name: Commit and push data.json
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           git config user.name "github-actions[bot]"
-          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+          # Pull latest to avoid conflicts
+          git fetch origin main
+          git reset --soft origin/main
+
+          # Stage and commit data.json (timestamp always changes so commit always happens)
           git add data.json
+          git status
           git commit -m "Auto-update dashboard data $(date -u +%Y-%m-%dT%H:%M:%SZ)" || echo "Nothing to commit"
-          git pull --rebase origin main || true
-          git push || echo "Push failed, will retry next cycle"
+
+          # Push with retry
+          git push origin main || (sleep 5 && git pull --rebase origin main && git push origin main)
