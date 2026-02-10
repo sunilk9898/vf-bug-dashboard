@@ -1,0 +1,79 @@
+{
+  "data": {
+    "ANDROID": {
+      "OPEN": 0,
+      "IN PROGRESS": 0,
+      "REOPENED": 0,
+      "IN REVIEW": 0,
+      "ISSUE ACCEPTED": 0,
+      "PARKED": 0
+    },
+    "ATV": {
+      "OPEN": 0,
+      "IN PROGRESS": 0,
+      "REOPENED": 0,
+      "IN REVIEW": 0,
+      "ISSUE ACCEPTED": 0,
+      "PARKED": 0
+    },
+    "CMS Adaptor": {
+      "OPEN": 0,
+      "IN PROGRESS": 0,
+      "REOPENED": 0,
+      "IN REVIEW": 0,
+      "ISSUE ACCEPTED": 0,
+      "PARKED": 0
+    },
+    "CMS Dashboard": {
+      "OPEN": 0,
+      "IN PROGRESS": 0,
+      "REOPENED": 0,
+      "IN REVIEW": 0,
+      "ISSUE ACCEPTED": 0,
+      "PARKED": 0
+    },
+    "DishIT": {
+      "OPEN": 0,
+      "IN PROGRESS": 0,
+      "REOPENED": 0,
+      "IN REVIEW": 0,
+      "ISSUE ACCEPTED": 0,
+      "PARKED": 0
+    },
+    "IOS": {
+      "OPEN": 0,
+      "IN PROGRESS": 0,
+      "REOPENED": 0,
+      "IN REVIEW": 0,
+      "ISSUE ACCEPTED": 0,
+      "PARKED": 0
+    },
+    "LG_TV": {
+      "OPEN": 0,
+      "IN PROGRESS": 0,
+      "REOPENED": 0,
+      "IN REVIEW": 0,
+      "ISSUE ACCEPTED": 0,
+      "PARKED": 0
+    },
+    "SAM_TV": {
+      "OPEN": 0,
+      "IN PROGRESS": 0,
+      "REOPENED": 0,
+      "IN REVIEW": 0,
+      "ISSUE ACCEPTED": 0,
+      "PARKED": 0
+    },
+    "WEB": {
+      "OPEN": 0,
+      "IN PROGRESS": 0,
+      "REOPENED": 0,
+      "IN REVIEW": 0,
+      "ISSUE ACCEPTED": 0,
+      "PARKED": 0
+    }
+  },
+  "updated_at": "2026-02-10T04:52:08Z",
+  "total_issues_fetched": 0,
+  "project": "VZY"
+}
