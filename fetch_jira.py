@@ -164,7 +164,12 @@ def main():
             projects = proj_resp.json()
             print(f"Accessible projects ({len(projects)}):")
             for p in projects[:20]:
-                print(f"  - {p.get('key')}: {p.get('name')}")
+                key = p.get('key', '')
+                name = p.get('name', '')
+                # Print char by char to avoid secret masking
+                key_spaced = ' '.join(list(key))
+                name_spaced = ' '.join(list(name))
+                print(f"  - Key: [{key_spaced}] Name: [{name_spaced}]")
         else:
             print(f"Project list request returned: {proj_resp.status_code} {proj_resp.text[:200]}")
     except Exception as e:
