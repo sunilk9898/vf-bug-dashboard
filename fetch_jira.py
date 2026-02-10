@@ -116,47 +116,44 @@ def build_dashboard_data(issues):
     for p in PLATFORMS:
         matrix[p] = {s: 0 for s in STATUSES}
 
-    # Debug: collect unique statuses, labels, components, issue types
-    seen_statuses = set()
-    seen_labels = set()
-    seen_components = set()
-    seen_types = set()
+    # Tracking counters
+    total_bugs = 0
+    matched_counted = 0
     unmatched_platforms = 0
+    unmatched_status = 0
+    bug_status_breakdown = {}
 
     for issue in issues:
         fields = issue.get('fields', {})
         status_name = fields.get('status', {}).get('name', '')
         issue_type = fields.get('issuetype', {}).get('name', '')
-        labels = fields.get('labels', [])
-        components = [c.get('name', '') for c in fields.get('components', [])]
-
-        seen_statuses.add(status_name)
-        seen_labels.update(labels)
-        seen_components.update(components)
-        seen_types.add(issue_type)
 
         platform = detect_platform(issue)
         status_upper = status_name.upper()
 
-        # Only count bugs, not all issue types
+        # Only count bugs
         if issue_type.upper() == 'BUG':
+            total_bugs += 1
+            # Track all bug statuses
+            bug_status_breakdown[status_name] = bug_status_breakdown.get(status_name, 0) + 1
+
             if platform and status_upper in STATUSES:
                 matrix[platform][status_upper] += 1
+                matched_counted += 1
+            elif platform and status_upper not in STATUSES:
+                unmatched_status += 1
             elif not platform:
                 unmatched_platforms += 1
-                if unmatched_platforms <= 5:
-                    summary = fields.get('summary', '')[:60]
-                    print(f"  Unmatched bug: [{issue.get('key')}] {summary} (status: {status_name})")
 
-    # Print debug info
-    print(f"\n=== DEBUG INFO ===")
+    # Print summary
+    print(f"\n=== FETCH SUMMARY ===")
     print(f"Total issues: {len(issues)}")
-    print(f"Unique issue types: {sorted(seen_types)}")
-    print(f"Unique statuses found: {sorted(seen_statuses)}")
-    print(f"Unique labels found: {sorted(seen_labels)}")
-    print(f"Unique components found: {sorted(seen_components)}")
-    print(f"Issues with unmatched platform: {unmatched_platforms}")
-    print(f"==================\n")
+    print(f"Total bugs: {total_bugs}")
+    print(f"Matched & counted: {matched_counted}")
+    print(f"Platform matched but status not tracked: {unmatched_status}")
+    print(f"Platform unmatched: {unmatched_platforms}")
+    print(f"Bug statuses: {bug_status_breakdown}")
+    print(f"=====================\n")
 
     return matrix
 
