@@ -46,7 +46,13 @@ jobs:
           git pull --rebase origin main || true
           git push || echo "Push failed, will retry next cycle"
 
-      - name: Keep workflow alive
-        uses: keepalive-workflow/keepalive-workflow@v2
+  keepalive:
+    name: Keep workflow alive
+    runs-on: ubuntu-latest
+    permissions:
+      actions: write
+    steps:
+      - uses: actions/checkout@v4
+      - uses: gautamkrishnar/keepalive-workflow@v2
         with:
           time_elapsed: 45
