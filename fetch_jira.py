@@ -152,7 +152,25 @@ def main():
         print("Set these as GitHub Secrets.")
         exit(1)
 
-    print(f"Fetching data from {JIRA_DOMAIN} for project {PROJECT_KEY}...")
+    # Debug: list accessible projects
+    print("Checking accessible projects...")
+    try:
+        proj_resp = requests.get(
+            f'https://{JIRA_DOMAIN}/rest/api/3/project',
+            headers={'Accept': 'application/json'},
+            auth=HTTPBasicAuth(JIRA_EMAIL, JIRA_API_TOKEN)
+        )
+        if proj_resp.status_code == 200:
+            projects = proj_resp.json()
+            print(f"Accessible projects ({len(projects)}):")
+            for p in projects[:20]:
+                print(f"  - {p.get('key')}: {p.get('name')}")
+        else:
+            print(f"Project list request returned: {proj_resp.status_code} {proj_resp.text[:200]}")
+    except Exception as e:
+        print(f"Could not list projects: {e}")
+
+    print(f"\nFetching data from {JIRA_DOMAIN} for project {PROJECT_KEY}...")
     issues = fetch_jira_data()
     matrix = build_dashboard_data(issues)
 
