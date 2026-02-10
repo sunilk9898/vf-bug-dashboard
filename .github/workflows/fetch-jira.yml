@@ -40,15 +40,22 @@ jobs:
           JIRA_PROJECT_KEY: ${{ secrets.JIRA_PROJECT_KEY }}
         run: python fetch_jira.py
 
+      - name: Save fresh data.json
+        run: cp data.json /tmp/fresh_data.json
+
       - name: Commit and push data.json
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git fetch origin main
           git reset --soft origin/main
+          cp /tmp/fresh_data.json data.json
           git add data.json
           git commit -m "Auto-update dashboard data $(date -u +%Y-%m-%dT%H:%M:%SZ)" || echo "Nothing to commit"
           git push origin main || (sleep 5 && git pull --rebase origin main && git push origin main)
+
+      - name: Ensure fresh data.json for deploy
+        run: cp /tmp/fresh_data.json data.json
 
       - name: Setup Pages
         uses: actions/configure-pages@v5
