@@ -27,9 +27,8 @@ def fetch_jira_data():
         'Content-Type': 'application/json'
     }
 
-    # Build JQL - fetch all bugs in active statuses
-    status_list = ', '.join([f'"{s}"' for s in STATUSES])
-    jql = f'project = {PROJECT_KEY} AND type = Bug AND status in ({status_list}) ORDER BY updated DESC'
+    # Fetch ALL bugs (no status filter) - we filter by status in build_dashboard_data
+    jql = f'project = {PROJECT_KEY} AND type = Bug ORDER BY updated DESC'
 
     # New Jira Cloud endpoint (replaces deprecated /rest/api/3/search)
     url = f'https://{JIRA_DOMAIN}/rest/api/3/search/jql'
@@ -98,12 +97,38 @@ def build_dashboard_data(issues):
     for p in PLATFORMS:
         matrix[p] = {s: 0 for s in STATUSES}
 
-    for issue in issues:
-        status_name = issue.get('fields', {}).get('status', {}).get('name', '').upper()
-        platform = detect_platform(issue)
+    # Debug: collect unique statuses, labels, components
+    seen_statuses = set()
+    seen_labels = set()
+    seen_components = set()
+    unmatched_platforms = 0
 
-        if platform and status_name in STATUSES:
-            matrix[platform][status_name] += 1
+    for issue in issues:
+        fields = issue.get('fields', {})
+        status_name = fields.get('status', {}).get('name', '')
+        labels = fields.get('labels', [])
+        components = [c.get('name', '') for c in fields.get('components', [])]
+
+        seen_statuses.add(status_name)
+        seen_labels.update(labels)
+        seen_components.update(components)
+
+        platform = detect_platform(issue)
+        status_upper = status_name.upper()
+
+        if platform and status_upper in STATUSES:
+            matrix[platform][status_upper] += 1
+        elif not platform:
+            unmatched_platforms += 1
+
+    # Print debug info
+    print(f"\n=== DEBUG INFO ===")
+    print(f"Total issues: {len(issues)}")
+    print(f"Unique statuses found: {sorted(seen_statuses)}")
+    print(f"Unique labels found: {sorted(seen_labels)}")
+    print(f"Unique components found: {sorted(seen_components)}")
+    print(f"Issues with unmatched platform: {unmatched_platforms}")
+    print(f"==================\n")
 
     return matrix
 
