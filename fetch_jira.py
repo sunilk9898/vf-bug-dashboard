@@ -27,8 +27,8 @@ def fetch_jira_data():
         'Content-Type': 'application/json'
     }
 
-    # Fetch ALL bugs (no status filter) - we filter by status in build_dashboard_data
-    jql = f'project = {PROJECT_KEY} AND type = Bug ORDER BY updated DESC'
+    # Fetch ALL issues first (to discover issue types), then filter in code
+    jql = f'project = {PROJECT_KEY} ORDER BY updated DESC'
 
     # New Jira Cloud endpoint (replaces deprecated /rest/api/3/search)
     url = f'https://{JIRA_DOMAIN}/rest/api/3/search/jql'
@@ -40,7 +40,7 @@ def fetch_jira_data():
         payload = {
             'jql': jql,
             'maxResults': 100,
-            'fields': ['status', 'labels', 'components', 'summary', 'priority', 'assignee', 'updated']
+            'fields': ['status', 'issuetype', 'labels', 'components', 'summary', 'priority', 'assignee', 'updated']
         }
         if next_page_token:
             payload['nextPageToken'] = next_page_token
@@ -97,21 +97,24 @@ def build_dashboard_data(issues):
     for p in PLATFORMS:
         matrix[p] = {s: 0 for s in STATUSES}
 
-    # Debug: collect unique statuses, labels, components
+    # Debug: collect unique statuses, labels, components, issue types
     seen_statuses = set()
     seen_labels = set()
     seen_components = set()
+    seen_types = set()
     unmatched_platforms = 0
 
     for issue in issues:
         fields = issue.get('fields', {})
         status_name = fields.get('status', {}).get('name', '')
+        issue_type = fields.get('issuetype', {}).get('name', '')
         labels = fields.get('labels', [])
         components = [c.get('name', '') for c in fields.get('components', [])]
 
         seen_statuses.add(status_name)
         seen_labels.update(labels)
         seen_components.update(components)
+        seen_types.add(issue_type)
 
         platform = detect_platform(issue)
         status_upper = status_name.upper()
@@ -124,6 +127,7 @@ def build_dashboard_data(issues):
     # Print debug info
     print(f"\n=== DEBUG INFO ===")
     print(f"Total issues: {len(issues)}")
+    print(f"Unique issue types: {sorted(seen_types)}")
     print(f"Unique statuses found: {sorted(seen_statuses)}")
     print(f"Unique labels found: {sorted(seen_labels)}")
     print(f"Unique components found: {sorted(seen_components)}")
