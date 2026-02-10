@@ -1,0 +1,588 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>VF Bug Health - Leadership Dashboard</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: #0f172a;
+            color: #e2e8f0;
+            min-height: 100vh;
+        }
+        .header {
+            background: linear-gradient(135deg, #1e3a5f, #0f172a);
+            padding: 24px 32px;
+            border-bottom: 1px solid #334155;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 12px;
+        }
+        .header h1 {
+            font-size: 24px;
+            font-weight: 700;
+            color: #f8fafc;
+        }
+        .header h1 span { color: #60a5fa; }
+        .header-meta {
+            display: flex;
+            gap: 20px;
+            align-items: center;
+            font-size: 13px;
+            color: #94a3b8;
+        }
+        .status-dot {
+            width: 8px; height: 8px;
+            background: #22c55e;
+            border-radius: 50%;
+            display: inline-block;
+            animation: pulse 2s infinite;
+        }
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.4; }
+        }
+        .container { max-width: 1400px; margin: 0 auto; padding: 24px; }
+
+        /* Summary Cards */
+        .summary-cards {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 16px;
+            margin-bottom: 28px;
+        }
+        .card {
+            background: #1e293b;
+            border: 1px solid #334155;
+            border-radius: 12px;
+            padding: 20px;
+            text-align: center;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+        .card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(0,0,0,0.3);
+        }
+        .card .number {
+            font-size: 36px;
+            font-weight: 800;
+            line-height: 1;
+            margin-bottom: 6px;
+        }
+        .card .label {
+            font-size: 12px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: #94a3b8;
+        }
+        .card.total .number { color: #60a5fa; }
+        .card.open .number { color: #f87171; }
+        .card.progress .number { color: #fbbf24; }
+        .card.review .number { color: #a78bfa; }
+        .card.accepted .number { color: #34d399; }
+        .card.parked .number { color: #94a3b8; }
+
+        /* Table */
+        .table-section {
+            background: #1e293b;
+            border: 1px solid #334155;
+            border-radius: 12px;
+            overflow: hidden;
+            margin-bottom: 28px;
+        }
+        .table-section h2 {
+            padding: 16px 24px;
+            font-size: 16px;
+            font-weight: 600;
+            border-bottom: 1px solid #334155;
+            color: #f8fafc;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        thead th {
+            background: #0f172a;
+            padding: 12px 16px;
+            text-align: center;
+            font-size: 11px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: #94a3b8;
+            font-weight: 600;
+        }
+        thead th:first-child { text-align: left; padding-left: 24px; }
+        tbody td {
+            padding: 12px 16px;
+            text-align: center;
+            font-size: 14px;
+            border-bottom: 1px solid #1e293b;
+        }
+        tbody td:first-child {
+            text-align: left;
+            padding-left: 24px;
+            font-weight: 600;
+            color: #f8fafc;
+        }
+        tbody tr { background: #1e293b; transition: background 0.15s; }
+        tbody tr:nth-child(even) { background: #172033; }
+        tbody tr:hover { background: #253449; }
+        tbody tr.total-row {
+            background: #0f172a;
+            font-weight: 700;
+            border-top: 2px solid #334155;
+        }
+        tbody tr.total-row td { color: #60a5fa; font-size: 15px; }
+        .badge {
+            display: inline-block;
+            padding: 2px 10px;
+            border-radius: 999px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+        .badge-open { background: #7f1d1d; color: #fca5a5; }
+        .badge-progress { background: #78350f; color: #fde68a; }
+        .badge-reopened { background: #7c2d12; color: #fdba74; }
+        .badge-review { background: #312e81; color: #c4b5fd; }
+        .badge-accepted { background: #064e3b; color: #6ee7b7; }
+        .badge-parked { background: #1e293b; color: #94a3b8; border: 1px solid #475569; }
+
+        /* Charts area */
+        .charts-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 24px;
+            margin-bottom: 28px;
+        }
+        .chart-card {
+            background: #1e293b;
+            border: 1px solid #334155;
+            border-radius: 12px;
+            padding: 24px;
+        }
+        .chart-card h3 {
+            font-size: 14px;
+            font-weight: 600;
+            margin-bottom: 16px;
+            color: #f8fafc;
+        }
+        .bar-chart .bar-row {
+            display: flex;
+            align-items: center;
+            margin-bottom: 10px;
+            gap: 10px;
+        }
+        .bar-chart .bar-label {
+            width: 120px;
+            font-size: 13px;
+            color: #cbd5e1;
+            flex-shrink: 0;
+        }
+        .bar-chart .bar-track {
+            flex: 1;
+            height: 24px;
+            background: #0f172a;
+            border-radius: 6px;
+            overflow: hidden;
+            position: relative;
+        }
+        .bar-chart .bar-fill {
+            height: 100%;
+            border-radius: 6px;
+            transition: width 0.8s ease;
+            display: flex;
+            align-items: center;
+            padding-left: 8px;
+            font-size: 11px;
+            font-weight: 600;
+            color: #fff;
+            min-width: fit-content;
+        }
+        .bar-chart .bar-value {
+            width: 30px;
+            text-align: right;
+            font-size: 14px;
+            font-weight: 700;
+            color: #f8fafc;
+            flex-shrink: 0;
+        }
+
+        /* Status distribution */
+        .status-dist {
+            display: flex;
+            gap: 12px;
+            flex-wrap: wrap;
+        }
+        .status-chip {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            background: #0f172a;
+            padding: 10px 16px;
+            border-radius: 10px;
+            flex: 1;
+            min-width: 130px;
+        }
+        .status-chip .dot {
+            width: 12px; height: 12px;
+            border-radius: 3px;
+            flex-shrink: 0;
+        }
+        .status-chip .info { display: flex; flex-direction: column; }
+        .status-chip .info .val { font-size: 18px; font-weight: 700; }
+        .status-chip .info .lbl { font-size: 11px; color: #94a3b8; text-transform: uppercase; }
+
+        /* Footer */
+        .footer {
+            text-align: center;
+            padding: 20px;
+            color: #475569;
+            font-size: 12px;
+        }
+
+        /* Refresh button */
+        .btn-refresh {
+            background: #1e40af;
+            color: #fff;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 13px;
+            font-weight: 500;
+            transition: background 0.2s;
+        }
+        .btn-refresh:hover { background: #2563eb; }
+        .btn-refresh:disabled { opacity: 0.5; cursor: not-allowed; }
+
+        /* Loading */
+        .loading-overlay {
+            position: fixed; inset: 0;
+            background: rgba(15,23,42,0.9);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 100;
+            flex-direction: column;
+            gap: 16px;
+        }
+        .spinner {
+            width: 40px; height: 40px;
+            border: 3px solid #334155;
+            border-top-color: #60a5fa;
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+        }
+        @keyframes spin { to { transform: rotate(360deg); } }
+
+        .error-banner {
+            background: #7f1d1d;
+            color: #fca5a5;
+            padding: 16px 24px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            display: none;
+        }
+
+        @media (max-width: 768px) {
+            .charts-grid { grid-template-columns: 1fr; }
+            .header { padding: 16px; }
+            .container { padding: 16px; }
+            .header h1 { font-size: 18px; }
+        }
+    </style>
+</head>
+<body>
+    <div class="loading-overlay" id="loading">
+        <div class="spinner"></div>
+        <div style="color: #94a3b8; font-size: 14px;">Loading dashboard data...</div>
+    </div>
+
+    <div class="header">
+        <div>
+            <h1>VF Bug Health <span>- Leadership Dashboard</span></h1>
+        </div>
+        <div class="header-meta">
+            <span><span class="status-dot"></span> Live</span>
+            <span id="lastUpdated">--</span>
+            <button class="btn-refresh" id="refreshBtn" onclick="loadData()">Refresh</button>
+        </div>
+    </div>
+
+    <div class="container">
+        <div class="error-banner" id="errorBanner"></div>
+
+        <!-- Summary Cards -->
+        <div class="summary-cards" id="summaryCards"></div>
+
+        <!-- Status Distribution -->
+        <div class="charts-grid">
+            <div class="chart-card">
+                <h3>Status Distribution (All Platforms)</h3>
+                <div class="status-dist" id="statusDist"></div>
+            </div>
+            <div class="chart-card">
+                <h3>Platform Bug Count</h3>
+                <div class="bar-chart" id="platformChart"></div>
+            </div>
+        </div>
+
+        <!-- Main Table -->
+        <div class="table-section">
+            <h2>Platform x Status Breakdown</h2>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Platform</th>
+                        <th>Open</th>
+                        <th>In Progress</th>
+                        <th>Reopened</th>
+                        <th>In Review</th>
+                        <th>Issue Accepted</th>
+                        <th>Parked</th>
+                        <th>Total</th>
+                    </tr>
+                </thead>
+                <tbody id="tableBody"></tbody>
+            </table>
+        </div>
+    </div>
+
+    <div class="footer">
+        VF Bug Health Dashboard | Data sourced from Jira (VZY Project) | Auto-refreshes every 5 minutes
+    </div>
+
+    <script>
+        // ============================================
+        // CONFIGURATION - Update these values
+        // ============================================
+        const CONFIG = {
+            JIRA_DOMAIN: 'hbeindia.atlassian.net',
+            JIRA_EMAIL: '',       // Add your Jira email for live API mode
+            JIRA_API_TOKEN: '',   // Add your Jira API token for live API mode
+            PROJECT_KEY: 'VZY',
+            // Set to true to use live Jira API (requires email + token above)
+            USE_LIVE_API: false,
+            AUTO_REFRESH_MS: 300000 // 5 minutes
+        };
+
+        const STATUSES = ['OPEN', 'IN PROGRESS', 'REOPENED', 'IN REVIEW', 'ISSUE ACCEPTED', 'PARKED'];
+        const PLATFORMS = ['ANDROID', 'ATV', 'CMS Adaptor', 'CMS Dashboard', 'DishIT', 'IOS', 'LG_TV', 'SAM_TV', 'WEB'];
+
+        const STATUS_COLORS = {
+            'OPEN': '#ef4444',
+            'IN PROGRESS': '#f59e0b',
+            'REOPENED': '#f97316',
+            'IN REVIEW': '#8b5cf6',
+            'ISSUE ACCEPTED': '#10b981',
+            'PARKED': '#64748b'
+        };
+
+        const STATUS_BADGE_CLASS = {
+            'OPEN': 'badge-open',
+            'IN PROGRESS': 'badge-progress',
+            'REOPENED': 'badge-reopened',
+            'IN REVIEW': 'badge-review',
+            'ISSUE ACCEPTED': 'badge-accepted',
+            'PARKED': 'badge-parked'
+        };
+
+        // ============================================
+        // STATIC DATA (from your Confluence dashboard)
+        // Update this object when you want to refresh
+        // ============================================
+        function getStaticData() {
+            return {
+                'ANDROID':        { 'OPEN': 1, 'IN PROGRESS': 0, 'REOPENED': 0, 'IN REVIEW': 1, 'ISSUE ACCEPTED': 1, 'PARKED': 1 },
+                'ATV':            { 'OPEN': 0, 'IN PROGRESS': 0, 'REOPENED': 3, 'IN REVIEW': 0, 'ISSUE ACCEPTED': 1, 'PARKED': 0 },
+                'CMS Adaptor':    { 'OPEN': 0, 'IN PROGRESS': 0, 'REOPENED': 0, 'IN REVIEW': 0, 'ISSUE ACCEPTED': 1, 'PARKED': 0 },
+                'CMS Dashboard':  { 'OPEN': 0, 'IN PROGRESS': 1, 'REOPENED': 0, 'IN REVIEW': 0, 'ISSUE ACCEPTED': 0, 'PARKED': 0 },
+                'DishIT':         { 'OPEN': 0, 'IN PROGRESS': 0, 'REOPENED': 0, 'IN REVIEW': 0, 'ISSUE ACCEPTED': 0, 'PARKED': 1 },
+                'IOS':            { 'OPEN': 0, 'IN PROGRESS': 0, 'REOPENED': 0, 'IN REVIEW': 1, 'ISSUE ACCEPTED': 0, 'PARKED': 1 },
+                'LG_TV':          { 'OPEN': 0, 'IN PROGRESS': 2, 'REOPENED': 0, 'IN REVIEW': 0, 'ISSUE ACCEPTED': 0, 'PARKED': 0 },
+                'SAM_TV':         { 'OPEN': 0, 'IN PROGRESS': 2, 'REOPENED': 0, 'IN REVIEW': 0, 'ISSUE ACCEPTED': 1, 'PARKED': 0 },
+                'WEB':            { 'OPEN': 2, 'IN PROGRESS': 0, 'REOPENED': 1, 'IN REVIEW': 0, 'ISSUE ACCEPTED': 2, 'PARKED': 0 },
+            };
+        }
+
+        // ============================================
+        // LIVE JIRA FETCH (optional, requires CORS proxy)
+        // ============================================
+        async function fetchJiraData() {
+            const base = `https://${CONFIG.JIRA_DOMAIN}/rest/api/3/search`;
+            const auth = btoa(`${CONFIG.JIRA_EMAIL}:${CONFIG.JIRA_API_TOKEN}`);
+            const jql = `project = ${CONFIG.PROJECT_KEY} AND type = Bug AND status in ("OPEN","IN PROGRESS","REOPENED","IN REVIEW","ISSUE ACCEPTED","PARKED") ORDER BY updated DESC`;
+
+            const response = await fetch(`${base}?jql=${encodeURIComponent(jql)}&maxResults=500&fields=status,labels,components`, {
+                headers: {
+                    'Authorization': `Basic ${auth}`,
+                    'Accept': 'application/json'
+                }
+            });
+
+            if (!response.ok) throw new Error(`Jira API error: ${response.status}`);
+            const data = await response.json();
+
+            // Build the same structure as static data
+            const result = {};
+            PLATFORMS.forEach(p => {
+                result[p] = {};
+                STATUSES.forEach(s => result[p][s] = 0);
+            });
+
+            (data.issues || []).forEach(issue => {
+                const status = (issue.fields?.status?.name || '').toUpperCase();
+                const labels = (issue.fields?.labels || []).map(l => l.toUpperCase());
+                const components = (issue.fields?.components || []).map(c => (c.name || '').toUpperCase());
+                const all = [...labels, ...components].join(' ');
+
+                let platform = null;
+                for (const p of PLATFORMS) {
+                    if (all.includes(p.toUpperCase())) { platform = p; break; }
+                }
+                if (platform && STATUSES.includes(status)) {
+                    result[platform][status]++;
+                }
+            });
+
+            return result;
+        }
+
+        // ============================================
+        // RENDER DASHBOARD
+        // ============================================
+        function renderDashboard(data) {
+            // Compute totals
+            const totals = {};
+            STATUSES.forEach(s => totals[s] = 0);
+            let grandTotal = 0;
+
+            const platformTotals = {};
+            PLATFORMS.forEach(p => {
+                let pTotal = 0;
+                STATUSES.forEach(s => {
+                    const val = data[p]?.[s] || 0;
+                    totals[s] += val;
+                    pTotal += val;
+                });
+                platformTotals[p] = pTotal;
+                grandTotal += pTotal;
+            });
+
+            // Summary cards
+            const cardData = [
+                { label: 'Total Issues', value: grandTotal, cls: 'total' },
+                { label: 'Open', value: totals['OPEN'], cls: 'open' },
+                { label: 'In Progress', value: totals['IN PROGRESS'], cls: 'progress' },
+                { label: 'Reopened', value: totals['REOPENED'], cls: 'open' },
+                { label: 'In Review', value: totals['IN REVIEW'], cls: 'review' },
+                { label: 'Accepted', value: totals['ISSUE ACCEPTED'], cls: 'accepted' },
+                { label: 'Parked', value: totals['PARKED'], cls: 'parked' }
+            ];
+
+            document.getElementById('summaryCards').innerHTML = cardData.map(c => `
+                <div class="card ${c.cls}">
+                    <div class="number">${c.value}</div>
+                    <div class="label">${c.label}</div>
+                </div>
+            `).join('');
+
+            // Status distribution chips
+            document.getElementById('statusDist').innerHTML = STATUSES.map(s => `
+                <div class="status-chip">
+                    <div class="dot" style="background: ${STATUS_COLORS[s]}"></div>
+                    <div class="info">
+                        <span class="val">${totals[s]}</span>
+                        <span class="lbl">${s}</span>
+                    </div>
+                </div>
+            `).join('');
+
+            // Platform bar chart
+            const maxTotal = Math.max(...Object.values(platformTotals), 1);
+            document.getElementById('platformChart').innerHTML = PLATFORMS
+                .sort((a, b) => platformTotals[b] - platformTotals[a])
+                .map(p => {
+                    const pct = (platformTotals[p] / maxTotal * 100).toFixed(0);
+                    const color = platformTotals[p] >= 4 ? '#ef4444' : platformTotals[p] >= 2 ? '#f59e0b' : '#10b981';
+                    return `
+                        <div class="bar-row">
+                            <div class="bar-label">${p}</div>
+                            <div class="bar-track">
+                                <div class="bar-fill" style="width: ${Math.max(pct, 5)}%; background: ${color};">${platformTotals[p]}</div>
+                            </div>
+                            <div class="bar-value">${platformTotals[p]}</div>
+                        </div>
+                    `;
+                }).join('');
+
+            // Table
+            let tableHTML = '';
+            PLATFORMS.forEach(p => {
+                let rowTotal = platformTotals[p];
+                tableHTML += `<tr>
+                    <td>${p}</td>
+                    ${STATUSES.map(s => {
+                        const val = data[p]?.[s] || 0;
+                        return `<td>${val > 0 ? `<span class="badge ${STATUS_BADGE_CLASS[s]}">${val}</span>` : '<span style="color:#475569">0</span>'}</td>`;
+                    }).join('')}
+                    <td><strong style="color: ${rowTotal >= 4 ? '#f87171' : rowTotal >= 2 ? '#fbbf24' : '#34d399'}">${rowTotal}</strong></td>
+                </tr>`;
+            });
+
+            // Total row
+            tableHTML += `<tr class="total-row">
+                <td>Total Unique Issues:</td>
+                ${STATUSES.map(s => `<td>${totals[s]}</td>`).join('')}
+                <td>${grandTotal}</td>
+            </tr>`;
+
+            document.getElementById('tableBody').innerHTML = tableHTML;
+            document.getElementById('lastUpdated').textContent = `Updated: ${new Date().toLocaleString()}`;
+        }
+
+        // ============================================
+        // LOAD DATA
+        // ============================================
+        async function loadData() {
+            const btn = document.getElementById('refreshBtn');
+            const loading = document.getElementById('loading');
+            const errorBanner = document.getElementById('errorBanner');
+
+            btn.disabled = true;
+            btn.textContent = 'Loading...';
+            errorBanner.style.display = 'none';
+
+            try {
+                let data;
+                if (CONFIG.USE_LIVE_API) {
+                    data = await fetchJiraData();
+                } else {
+                    data = getStaticData();
+                }
+                renderDashboard(data);
+                loading.style.display = 'none';
+            } catch (err) {
+                console.error('Failed to load data:', err);
+                errorBanner.textContent = `Failed to fetch data: ${err.message}. Falling back to static data.`;
+                errorBanner.style.display = 'block';
+                renderDashboard(getStaticData());
+                loading.style.display = 'none';
+            } finally {
+                btn.disabled = false;
+                btn.textContent = 'Refresh';
+            }
+        }
+
+        // Initial load
+        loadData();
+
+        // Auto-refresh
+        setInterval(loadData, CONFIG.AUTO_REFRESH_MS);
+    </script>
+</body>
+</html>
