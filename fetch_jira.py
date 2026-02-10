@@ -45,18 +45,9 @@ def fetch_jira_data():
         if next_page_token:
             payload['nextPageToken'] = next_page_token
 
-        print(f"POST {url}")
-        print(f"JQL: {payload['jql']}")
         response = requests.post(url, headers=headers, auth=auth, json=payload)
-        print(f"Response status: {response.status_code}")
-        data = response.json()
-
-        # Debug: print raw response keys and first 500 chars
-        print(f"Response keys: {list(data.keys())}")
-        raw_str = json.dumps(data)
-        print(f"Response preview: {raw_str[:500]}")
-
         response.raise_for_status()
+        data = response.json()
 
         issues = data.get('issues', [])
         all_issues.extend(issues)
@@ -176,30 +167,7 @@ def main():
         print("Set these as GitHub Secrets.")
         exit(1)
 
-    # Debug: list accessible projects
-    print("Checking accessible projects...")
-    try:
-        proj_resp = requests.get(
-            f'https://{JIRA_DOMAIN}/rest/api/3/project',
-            headers={'Accept': 'application/json'},
-            auth=HTTPBasicAuth(JIRA_EMAIL, JIRA_API_TOKEN)
-        )
-        if proj_resp.status_code == 200:
-            projects = proj_resp.json()
-            print(f"Accessible projects ({len(projects)}):")
-            for p in projects[:20]:
-                key = p.get('key', '')
-                name = p.get('name', '')
-                # Print char by char to avoid secret masking
-                key_spaced = ' '.join(list(key))
-                name_spaced = ' '.join(list(name))
-                print(f"  - Key: [{key_spaced}] Name: [{name_spaced}]")
-        else:
-            print(f"Project list request returned: {proj_resp.status_code} {proj_resp.text[:200]}")
-    except Exception as e:
-        print(f"Could not list projects: {e}")
-
-    print(f"\nFetching data from {JIRA_DOMAIN} for project {PROJECT_KEY}...")
+    print(f"Fetching data from {JIRA_DOMAIN} for project {PROJECT_KEY}...")
     issues = fetch_jira_data()
     matrix = build_dashboard_data(issues)
 
