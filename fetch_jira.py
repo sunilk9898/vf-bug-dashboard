@@ -45,9 +45,18 @@ def fetch_jira_data():
         if next_page_token:
             payload['nextPageToken'] = next_page_token
 
+        print(f"POST {url}")
+        print(f"JQL: {payload['jql']}")
         response = requests.post(url, headers=headers, auth=auth, json=payload)
-        response.raise_for_status()
+        print(f"Response status: {response.status_code}")
         data = response.json()
+
+        # Debug: print raw response keys and first 500 chars
+        print(f"Response keys: {list(data.keys())}")
+        raw_str = json.dumps(data)
+        print(f"Response preview: {raw_str[:500]}")
+
+        response.raise_for_status()
 
         issues = data.get('issues', [])
         all_issues.extend(issues)
