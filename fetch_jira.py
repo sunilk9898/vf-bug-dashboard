@@ -20,10 +20,8 @@ PLATFORMS = ['ANDROID', 'ATV', 'CMS Adaptor', 'CMS Dashboard', 'DishIT', 'IOS', 
 STATUSES = ['OPEN', 'IN PROGRESS', 'REOPENED', 'IN REVIEW', 'ISSUE ACCEPTED', 'PARKED']
 
 def fetch_jira_data():
-    """Fetch bug data from Jira REST API."""
-    base_url = f'https://{JIRA_DOMAIN}/rest/api/3/search'
+    """Fetch bug data from Jira REST API (supports both v2 and v3)."""
     auth = HTTPBasicAuth(JIRA_EMAIL, JIRA_API_TOKEN)
-    headers = {'Accept': 'application/json'}
 
     # Build JQL - fetch all bugs in active statuses
     status_list = ', '.join([f'"{s}"' for s in STATUSES])
@@ -32,15 +30,57 @@ def fetch_jira_data():
     all_issues = []
     start_at = 0
 
-    while True:
-        params = {
-            'jql': jql,
-            'startAt': start_at,
-            'maxResults': 100,
-            'fields': 'status,labels,components,summary,priority,assignee,updated'
-        }
+    # Try REST API v2 first (more widely supported), fall back to v3 POST
+    api_versions = [
+        ('v2_get', f'https://{JIRA_DOMAIN}/rest/api/2/search'),
+        ('v3_post', f'https://{JIRA_DOMAIN}/rest/api/3/search/jql'),
+    ]
 
-        response = requests.get(base_url, headers=headers, auth=auth, params=params)
+    chosen_url = None
+    chosen_method = None
+
+    for method, url in api_versions:
+        try:
+            if 'get' in method:
+                test_resp = requests.get(url, headers={'Accept': 'application/json'}, auth=auth,
+                    params={'jql': jql, 'startAt': 0, 'maxResults': 1, 'fields': 'status'})
+            else:
+                test_resp = requests.post(url, headers={'Accept': 'application/json', 'Content-Type': 'application/json'},
+                    auth=auth, json={'jql': jql, 'startAt': 0, 'maxResults': 1, 'fields': ['status']})
+
+            if test_resp.status_code == 200:
+                chosen_url = url
+                chosen_method = method
+                print(f"Using API: {method} ({url})")
+                break
+            else:
+                print(f"API {method} returned {test_resp.status_code}, trying next...")
+        except Exception as e:
+            print(f"API {method} failed: {e}, trying next...")
+
+    if not chosen_url:
+        raise Exception("Could not connect to any Jira API endpoint")
+
+    while True:
+        if 'get' in chosen_method:
+            params = {
+                'jql': jql,
+                'startAt': start_at,
+                'maxResults': 100,
+                'fields': 'status,labels,components,summary,priority,assignee,updated'
+            }
+            response = requests.get(chosen_url, headers={'Accept': 'application/json'}, auth=auth, params=params)
+        else:
+            payload = {
+                'jql': jql,
+                'startAt': start_at,
+                'maxResults': 100,
+                'fields': ['status', 'labels', 'components', 'summary', 'priority', 'assignee', 'updated']
+            }
+            response = requests.post(chosen_url,
+                headers={'Accept': 'application/json', 'Content-Type': 'application/json'},
+                auth=auth, json=payload)
+
         response.raise_for_status()
         data = response.json()
 
