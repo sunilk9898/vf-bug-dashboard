@@ -7,7 +7,6 @@ on:
 
 permissions:
   contents: write
-  actions: write
 
 jobs:
   fetch-and-update:
@@ -37,22 +36,6 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
           git add data.json
-          if git diff --cached --quiet; then
-            echo "No data changes detected, but forcing timestamp update"
-            git checkout -- data.json
-          fi
-          git add data.json
           git commit -m "Auto-update dashboard data $(date -u +%Y-%m-%dT%H:%M:%SZ)" || echo "Nothing to commit"
           git pull --rebase origin main || true
           git push || echo "Push failed, will retry next cycle"
-
-  keepalive:
-    name: Keep workflow alive
-    runs-on: ubuntu-latest
-    permissions:
-      actions: write
-    steps:
-      - uses: actions/checkout@v4
-      - uses: gautamkrishnar/keepalive-workflow@v2
-        with:
-          time_elapsed: 45
