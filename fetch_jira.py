@@ -40,7 +40,7 @@ def fetch_jira_data():
         payload = {
             'jql': jql,
             'maxResults': 100,
-            'fields': ['status', 'issuetype', 'labels', 'components', 'summary', 'priority', 'assignee', 'updated']
+            'fields': ['*all']
         }
         if next_page_token:
             payload['nextPageToken'] = next_page_token
@@ -74,27 +74,46 @@ def fetch_jira_data():
 
 
 def detect_platform(issue):
-    """Detect platform from labels and components."""
-    labels = [l.upper() for l in issue.get('fields', {}).get('labels', [])]
-    components = [c.get('name', '').upper() for c in issue.get('fields', {}).get('components', [])]
-    all_text = ' '.join(labels + components)
+    """Detect platform from summary, labels, components, and custom fields."""
+    fields = issue.get('fields', {})
+    labels = [l.upper() for l in fields.get('labels', [])]
+    components = [c.get('name', '').upper() for c in fields.get('components', [])]
+    summary = (fields.get('summary') or '').upper()
 
-    for platform in PLATFORMS:
-        if platform.upper() in all_text:
-            return platform
+    # Also check ALL custom fields for platform info
+    custom_vals = []
+    for key, val in fields.items():
+        if key.startswith('customfield_') and val:
+            if isinstance(val, str):
+                custom_vals.append(val.upper())
+            elif isinstance(val, dict):
+                custom_vals.append((val.get('value', '') or val.get('name', '')).upper())
+            elif isinstance(val, list):
+                for item in val:
+                    if isinstance(item, str):
+                        custom_vals.append(item.upper())
+                    elif isinstance(item, dict):
+                        custom_vals.append((item.get('value', '') or item.get('name', '')).upper())
 
-    # Fuzzy matching for common variations
-    mappings = {
-        'ANDROID_MOBILE': 'ANDROID', 'ANDROID MOBILE': 'ANDROID',
-        'APPLE_TV': 'ATV', 'APPLE TV': 'ATV', 'ANDROID_TV': 'ATV', 'ANDROID TV': 'ATV',
-        'CMS_ADAPTOR': 'CMS Adaptor', 'CMS_DASHBOARD': 'CMS Dashboard',
-        'SAMSUNG': 'SAM_TV', 'SAMSUNG_TV': 'SAM_TV', 'SAMSUNG TV': 'SAM_TV',
-        'LG': 'LG_TV', 'LGTV': 'LG_TV', 'LG TV': 'LG_TV',
-        'DISH': 'DishIT', 'DISHIT': 'DishIT',
+    all_text = ' '.join(labels + components + custom_vals + [summary])
+
+    # Platform detection patterns (order matters - more specific first)
+    platform_patterns = {
+        'CMS Adaptor': ['CMS ADAPTOR', 'CMS_ADAPTOR', 'CMSADAPTOR'],
+        'CMS Dashboard': ['CMS DASHBOARD', 'CMS_DASHBOARD', 'CMSDASHBOARD'],
+        'DishIT': ['DISHIT', 'DISH IT', 'DISH_IT'],
+        'LG_TV': ['LG_TV', 'LGTV', 'LG TV', 'WEBOS', 'LG-TV'],
+        'SAM_TV': ['SAM_TV', 'SAMTV', 'SAM TV', 'SAMSUNG TV', 'SAMSUNG_TV', 'TIZEN', 'SAM-TV'],
+        'ATV': ['ATV', 'ANDROID TV', 'ANDROID_TV', 'ANDROIDTV', 'FIRE TV', 'FIRETV', 'FIRE_TV'],
+        'ANDROID': ['ANDROID'],
+        'IOS': ['IOS', 'APPLE', 'IPHONE', 'IPAD'],
+        'WEB': ['WEB'],
     }
-    for key, val in mappings.items():
-        if key in all_text:
-            return val
+
+    for platform, patterns in platform_patterns.items():
+        for pattern in patterns:
+            if pattern in all_text:
+                return platform
 
     return None
 
@@ -128,10 +147,15 @@ def build_dashboard_data(issues):
         platform = detect_platform(issue)
         status_upper = status_name.upper()
 
-        if platform and status_upper in STATUSES:
-            matrix[platform][status_upper] += 1
-        elif not platform:
-            unmatched_platforms += 1
+        # Only count bugs, not all issue types
+        if issue_type.upper() == 'BUG':
+            if platform and status_upper in STATUSES:
+                matrix[platform][status_upper] += 1
+            elif not platform:
+                unmatched_platforms += 1
+                if unmatched_platforms <= 5:
+                    summary = fields.get('summary', '')[:60]
+                    print(f"  Unmatched bug: [{issue.get('key')}] {summary} (status: {status_name})")
 
     # Print debug info
     print(f"\n=== DEBUG INFO ===")
