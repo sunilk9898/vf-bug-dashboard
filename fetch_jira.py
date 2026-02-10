@@ -20,79 +20,46 @@ PLATFORMS = ['ANDROID', 'ATV', 'CMS Adaptor', 'CMS Dashboard', 'DishIT', 'IOS', 
 STATUSES = ['OPEN', 'IN PROGRESS', 'REOPENED', 'IN REVIEW', 'ISSUE ACCEPTED', 'PARKED']
 
 def fetch_jira_data():
-    """Fetch bug data from Jira REST API (supports both v2 and v3)."""
+    """Fetch bug data from Jira Cloud REST API v3 (new /search/jql endpoint with cursor pagination)."""
     auth = HTTPBasicAuth(JIRA_EMAIL, JIRA_API_TOKEN)
+    headers = {
+        'Accept': 'application/json',
+        'Content-Type': 'application/json'
+    }
 
     # Build JQL - fetch all bugs in active statuses
     status_list = ', '.join([f'"{s}"' for s in STATUSES])
     jql = f'project = {PROJECT_KEY} AND type = Bug AND status in ({status_list}) ORDER BY updated DESC'
 
+    # New Jira Cloud endpoint (replaces deprecated /rest/api/3/search)
+    url = f'https://{JIRA_DOMAIN}/rest/api/3/search/jql'
+
     all_issues = []
-    start_at = 0
-
-    # Try REST API v2 first (more widely supported), fall back to v3 POST
-    api_versions = [
-        ('v2_get', f'https://{JIRA_DOMAIN}/rest/api/2/search'),
-        ('v3_post', f'https://{JIRA_DOMAIN}/rest/api/3/search/jql'),
-    ]
-
-    chosen_url = None
-    chosen_method = None
-
-    for method, url in api_versions:
-        try:
-            if 'get' in method:
-                test_resp = requests.get(url, headers={'Accept': 'application/json'}, auth=auth,
-                    params={'jql': jql, 'startAt': 0, 'maxResults': 1, 'fields': 'status'})
-            else:
-                test_resp = requests.post(url, headers={'Accept': 'application/json', 'Content-Type': 'application/json'},
-                    auth=auth, json={'jql': jql, 'startAt': 0, 'maxResults': 1, 'fields': ['status']})
-
-            if test_resp.status_code == 200:
-                chosen_url = url
-                chosen_method = method
-                print(f"Using API: {method} ({url})")
-                break
-            else:
-                print(f"API {method} returned {test_resp.status_code}, trying next...")
-        except Exception as e:
-            print(f"API {method} failed: {e}, trying next...")
-
-    if not chosen_url:
-        raise Exception("Could not connect to any Jira API endpoint")
+    next_page_token = None
 
     while True:
-        if 'get' in chosen_method:
-            params = {
-                'jql': jql,
-                'startAt': start_at,
-                'maxResults': 100,
-                'fields': 'status,labels,components,summary,priority,assignee,updated'
-            }
-            response = requests.get(chosen_url, headers={'Accept': 'application/json'}, auth=auth, params=params)
-        else:
-            payload = {
-                'jql': jql,
-                'startAt': start_at,
-                'maxResults': 100,
-                'fields': ['status', 'labels', 'components', 'summary', 'priority', 'assignee', 'updated']
-            }
-            response = requests.post(chosen_url,
-                headers={'Accept': 'application/json', 'Content-Type': 'application/json'},
-                auth=auth, json=payload)
+        payload = {
+            'jql': jql,
+            'maxResults': 100,
+            'fields': ['status', 'labels', 'components', 'summary', 'priority', 'assignee', 'updated']
+        }
+        if next_page_token:
+            payload['nextPageToken'] = next_page_token
 
+        response = requests.post(url, headers=headers, auth=auth, json=payload)
         response.raise_for_status()
         data = response.json()
 
         issues = data.get('issues', [])
         all_issues.extend(issues)
 
-        total = data.get('total', 0)
+        total = data.get('total', len(all_issues))
         print(f"Fetched {len(all_issues)} of {total} issues...")
 
-        if len(all_issues) >= total or len(issues) == 0:
+        # Cursor-based pagination
+        next_page_token = data.get('nextPageToken')
+        if not next_page_token or len(issues) == 0:
             break
-        start_at += 100
 
     print(f"Total issues fetched: {len(all_issues)}")
     return all_issues
