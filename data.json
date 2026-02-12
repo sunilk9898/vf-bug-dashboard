@@ -1,11 +1,11 @@
 {
   "data": {
     "ANDROID": {
-      "OPEN": 2,
+      "OPEN": 0,
       "IN PROGRESS": 0,
       "REOPENED": 1,
       "IN REVIEW": 0,
-      "ISSUE ACCEPTED": 1,
+      "ISSUE ACCEPTED": 3,
       "PARKED": 1
     },
     "ATV": {
@@ -65,7 +65,7 @@
       "PARKED": 0
     },
     "WEB": {
-      "OPEN": 1,
+      "OPEN": 0,
       "IN PROGRESS": 0,
       "REOPENED": 1,
       "IN REVIEW": 0,
@@ -73,7 +73,7 @@
       "PARKED": 0
     }
   },
-  "updated_at": "2026-02-12T11:09:17Z",
+  "updated_at": "2026-02-12T11:57:35Z",
   "total_issues_fetched": 1862,
   "project": "VF"
 }
