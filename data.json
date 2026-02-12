@@ -9,11 +9,11 @@
       "PARKED": 1
     },
     "ATV": {
-      "OPEN": 4,
-      "IN PROGRESS": 0,
+      "OPEN": 0,
+      "IN PROGRESS": 1,
       "REOPENED": 0,
       "IN REVIEW": 0,
-      "ISSUE ACCEPTED": 2,
+      "ISSUE ACCEPTED": 4,
       "PARKED": 0
     },
     "CMS Adaptor": {
@@ -21,7 +21,7 @@
       "IN PROGRESS": 1,
       "REOPENED": 2,
       "IN REVIEW": 0,
-      "ISSUE ACCEPTED": 2,
+      "ISSUE ACCEPTED": 3,
       "PARKED": 0
     },
     "CMS Dashboard": {
@@ -73,7 +73,7 @@
       "PARKED": 0
     }
   },
-  "updated_at": "2026-02-12T11:57:35Z",
+  "updated_at": "2026-02-12T13:45:58Z",
   "total_issues_fetched": 1862,
   "project": "VF"
 }
