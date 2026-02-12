@@ -9,19 +9,19 @@
       "PARKED": 1
     },
     "ATV": {
-      "OPEN": 1,
+      "OPEN": 0,
       "IN PROGRESS": 0,
       "REOPENED": 0,
       "IN REVIEW": 0,
-      "ISSUE ACCEPTED": 1,
+      "ISSUE ACCEPTED": 2,
       "PARKED": 0
     },
     "CMS Adaptor": {
       "OPEN": 0,
-      "IN PROGRESS": 0,
+      "IN PROGRESS": 1,
       "REOPENED": 2,
       "IN REVIEW": 0,
-      "ISSUE ACCEPTED": 1,
+      "ISSUE ACCEPTED": 2,
       "PARKED": 0
     },
     "CMS Dashboard": {
@@ -65,15 +65,15 @@
       "PARKED": 0
     },
     "WEB": {
-      "OPEN": 6,
+      "OPEN": 0,
       "IN PROGRESS": 0,
       "REOPENED": 1,
       "IN REVIEW": 0,
-      "ISSUE ACCEPTED": 2,
+      "ISSUE ACCEPTED": 4,
       "PARKED": 0
     }
   },
-  "updated_at": "2026-02-11T23:47:58Z",
+  "updated_at": "2026-02-12T03:22:48Z",
   "total_issues_fetched": 1834,
   "project": "VF"
 }
