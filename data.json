@@ -2,10 +2,10 @@
   "data": {
     "ANDROID": {
       "OPEN": 0,
-      "IN PROGRESS": 0,
+      "IN PROGRESS": 1,
       "REOPENED": 1,
       "IN REVIEW": 3,
-      "ISSUE ACCEPTED": 3,
+      "ISSUE ACCEPTED": 2,
       "PARKED": 1
     },
     "ATV": {
@@ -18,7 +18,7 @@
     },
     "CMS Adaptor": {
       "OPEN": 0,
-      "IN PROGRESS": 2,
+      "IN PROGRESS": 1,
       "REOPENED": 3,
       "IN REVIEW": 1,
       "ISSUE ACCEPTED": 0,
@@ -65,7 +65,7 @@
       "PARKED": 0
     },
     "WEB": {
-      "OPEN": 1,
+      "OPEN": 0,
       "IN PROGRESS": 0,
       "REOPENED": 1,
       "IN REVIEW": 0,
@@ -73,7 +73,7 @@
       "PARKED": 0
     }
   },
-  "updated_at": "2026-02-13T10:03:21Z",
+  "updated_at": "2026-02-13T11:03:39Z",
   "total_issues_fetched": 1871,
   "project": "VF"
 }
