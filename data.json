@@ -4,7 +4,7 @@
       "OPEN": 0,
       "IN PROGRESS": 0,
       "REOPENED": 1,
-      "IN REVIEW": 0,
+      "IN REVIEW": 3,
       "ISSUE ACCEPTED": 3,
       "PARKED": 1
     },
@@ -18,10 +18,10 @@
     },
     "CMS Adaptor": {
       "OPEN": 0,
-      "IN PROGRESS": 0,
+      "IN PROGRESS": 2,
       "REOPENED": 2,
-      "IN REVIEW": 0,
-      "ISSUE ACCEPTED": 2,
+      "IN REVIEW": 1,
+      "ISSUE ACCEPTED": 0,
       "PARKED": 0
     },
     "CMS Dashboard": {
@@ -59,13 +59,13 @@
     "SAM_TV": {
       "OPEN": 0,
       "IN PROGRESS": 1,
-      "REOPENED": 1,
+      "REOPENED": 0,
       "IN REVIEW": 0,
       "ISSUE ACCEPTED": 1,
       "PARKED": 0
     },
     "WEB": {
-      "OPEN": 0,
+      "OPEN": 1,
       "IN PROGRESS": 0,
       "REOPENED": 1,
       "IN REVIEW": 0,
@@ -73,7 +73,7 @@
       "PARKED": 0
     }
   },
-  "updated_at": "2026-02-13T07:16:37Z",
-  "total_issues_fetched": 1869,
+  "updated_at": "2026-02-13T09:03:50Z",
+  "total_issues_fetched": 1871,
   "project": "VF"
 }
